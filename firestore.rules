@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             ('admin' in request.auth.token) &&
+             request.auth.token.admin == true;
+    }
+    
+    function isAgeVerified() {
+      return request.auth != null && 
+             ('age_verified' in request.resource.data) &&
+             request.resource.data.age_verified == true;
+    }
+    
+    // Layout settings
+    match /settings/layout {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /settings/store {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Products
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Analytics
+    match /analytics_visits/{visitId} {
+      allow read: if isAuthenticated();
+      allow write: if true;
+    }
+    
+    match /product_views/{viewId} {
+      allow read: if isAuthenticated();
+      allow write: if true;
+    }
+
+    // User data
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && 
+                   request.auth.uid == userId && 
+                   isAgeVerified();
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Age verification status
+      match /verification/{docId} {
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        allow write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+
+    // Photo bank metadata
+    match /photos/{photoId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+      
+      match /metadata/{metadataId} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+    }
+  }
+}

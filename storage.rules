@@ -1,0 +1,49 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             ('admin' in request.auth.token) &&
+             request.auth.token.admin == true;
+    }
+    
+    function isAgeVerified() {
+      return request.auth != null && 
+             request.auth.token.age_verified == true;
+    }
+    
+    // Allow public read access to all files
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Product images
+    match /products/{category}/{imageId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Layout assets
+    match /layout/{category}/{imageId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Photo bank
+    match /photobank/{category}/{imageId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+    
+    // Marketing assets
+    match /marketing/{category}/{imageId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}
